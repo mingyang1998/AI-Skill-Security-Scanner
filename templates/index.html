@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}首页 - SkillGuard AI Skill安全检测平台{% endblock %}
+
+{% block content %}
+<!-- Hero Section - 对标SAFESKILL监测页 -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <div class="hero-label">// SKILLS INTELLIGENCE</div>
+                <h1 class="hero-title">SkillGuard · 多维度安全扫描，共建可信AI Skills安全生态</h1>
+                <p class="hero-subtitle">深度识别Skill潜在安全风险，三大核心引擎 + 17类安全威胁精准识别，为Skill用户、开发者和安全研究者提供专业AI Skill安全验证与扫描服务</p>
+                <div class="hero-buttons">
+                    <a href="/upload" class="btn btn-primary btn-lg me-3">
+                        <i class="fas fa-cloud-upload-alt me-2"></i>检测Skill安全性
+                    </a>
+                    <a href="/market" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-store me-2"></i>探索安全SkillHub
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-4 text-center d-none d-lg-block">
+                <div class="hero-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 平台优势能力 - 对标SAFESKILL"看得快/广/深/细" -->
+<section class="advantage-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-6 col-md-3">
+                <div class="advantage-card">
+                    <div class="advantage-icon">⚡</div>
+                    <h4>看得快</h4>
+                    <p>广泛的Skills实时监测能力</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="advantage-card">
+                    <div class="advantage-icon">🌐</div>
+                    <h4>看得广</h4>
+                    <p>主流Skill社区全覆盖</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="advantage-card">
+                    <div class="advantage-icon">🔬</div>
+                    <h4>看得深</h4>
+                    <p>3大核心引擎深度扫描</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="advantage-card">
+                    <div class="advantage-icon">🎯</div>
+                    <h4>看得细</h4>
+                    <p>17类安全风险精准识别</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 统计卡片 -->
+<section class="stats-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon bg-primary">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ stats.total_scans }}</h3>
+                        <p>总扫描次数</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon bg-success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ stats.completed_scans }}</h3>
+                        <p>已完成扫描</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon bg-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ stats.high_risk_count }}</h3>
+                        <p>高危风险</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-icon bg-info">
+                        <i class="fas fa-check-shield"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ stats.trusted_skills }}</h3>
+                        <p>可信Skills</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 三大核心引擎 - 对标SAFESKILL -->
+<section class="engines-section">
+    <div class="container">
+        <h2 class="section-title">三大核心引擎</h2>
+        <p class="section-subtitle">从静态扫描到"专家级大脑"的深度进化</p>
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="engine-card">
+                    <div class="engine-number">01</div>
+                    <div class="engine-icon"><i class="fas fa-code"></i></div>
+                    <h4>静态代码分析</h4>
+                    <p>深入解析Skill文件结构与API调用链路，对manifest、脚本、配置文件进行静态代码扫描，识别恶意URL、数据上传、命令注入、删除操作、提权等威胁，从源头管控Skill底座素质</p>
+                    <div class="engine-tags">
+                        <span class="engine-tag">恶意URL</span>
+                        <span class="engine-tag">命令注入</span>
+                        <span class="engine-tag">硬编码密钥</span>
+                        <span class="engine-tag">危险删除</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="engine-card featured">
+                    <div class="engine-number">02</div>
+                    <div class="engine-icon"><i class="fas fa-brain"></i></div>
+                    <h4>LLM语义分析</h4>
+                    <p>采用专用大模型深度语义理解，检测隐蔽恶意意图与异常行为模式，发现传统规则难以识别的语义层威胁</p>
+                    <div class="engine-tags">
+                        <span class="engine-tag">提示注入</span>
+                        <span class="engine-tag">社会工程</span>
+                        <span class="engine-tag">恶意引导</span>
+                        <span class="engine-tag">功能不符</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="engine-card">
+                    <div class="engine-number">03</div>
+                    <div class="engine-icon"><i class="fas fa-crosshairs"></i></div>
+                    <h4>威胁情报检测</h4>
+                    <p>结合高质量威胁情报库，对Skill涉及的域名、IP、URL等网络通信特征进行全量IOC匹配，准确识别恶意基础设施与危险域名</p>
+                    <div class="engine-tags">
+                        <span class="engine-tag">IOC匹配</span>
+                        <span class="engine-tag">危险域名</span>
+                        <span class="engine-tag">供应链</span>
+                        <span class="engine-tag">字节码篡改</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 17类安全风险精准识别 - 对标SAFESKILL -->
+<section class="threats-section">
+    <div class="container">
+        <h2 class="section-title">17类安全风险精准识别</h2>
+        <p class="section-subtitle">攻克传统检测手段的业务逻辑盲区</p>
+        
+        <div class="threats-grid">
+            <div class="threat-card">
+                <div class="threat-emoji">🧠</div>
+                <h5>提示注入</h5>
+                <p>通过恶意提示词操纵大模型执行非预期指令</p>
+            </div>
+            <div class="threat-card">
+                <div class="threat-emoji">💉</div>
+                <h5>命令注入</h5>
+                <p>在系统命令中注入恶意代码实现任意命令执行</p>
+            </div>
+            <div class="threat-card">
+                <div class="threat-emoji">📤</div>
+                <h5>数据外传</h5>
+                <p>未经授权将敏感数据传输至外部服务器</p>
+            </div>
+            <div class="threat-card">
+                <div class="threat-emoji">🔑</div>
+                <h5>硬编码密钥</h5>
+                <p>源码中明文嵌入API密钥、Token等凭证信息</p>
+            </div>
+            <div class="threat-card">
+                <div class="threat-emoji">🔧</div>
+                <h5>未授权工具调用</h5>
+                <p>越权调用系统工具或API接口执行敏感操作</p>
+            </div>
+            <div class="threat-card">
+                <div class="threat-emoji">🌀</div>
+                <h5>代码混淆</h5>
+                <p>通过混淆技术隐藏真实代码逻辑与恶意行为</p>
+            </div>
+            <div class="threat-card">
+                <div class="threat-emoji">🎭</div>
+                <h5>社会工程</h5>
+                <p>诱导用户授予高危权限或泄露敏感信息</p>
+            </div>
+            <div class="threat-card">
+                <div class="threat-emoji">💾</div>
+                <h5>资源滥用</h5>
+                <p>恶意消耗Token配额、频繁调用API造成资源耗尽</p>
+            </div>
+            <div class="threat-card">
+                <div class="threat-emoji">⛓️</div>
+                <h5>供应链攻击</h5>
+                <p>通过篡改依赖包或上游组件植入恶意代码</p>
+            </div>
+            <div class="threat-card">
+                <div class="threat-emoji">⬆️</div>
+                <h5>权限提升</h5>
+                <p>利用漏洞获取超出预期的系统权限</p>
+            </div>
+            <div class="threat-card">
+                <div class="threat-emoji">🧲</div>
+                <h5>恶意引导</h5>
+                <p>引导大模型生成有害、违规或误导性内容</p>
+            </div>
+            <div class="threat-card">
+                <div class="threat-emoji">📝</div>
+                <h5>Skill.md不一致</h5>
+                <p>描述文件与实际功能行为存在显著差异</p>
+            </div>
+            <div class="threat-card">
+                <div class="threat-emoji">🔍</div>
+                <h5>代码质量问题</h5>
+                <p>存在严重的代码缺陷可能导致安全隐患</p>
+            </div>
+            <div class="threat-card">
+                <div class="threat-emoji">⚙️</div>
+                <h5>字节码篡改</h5>
+                <p>篡改编译后字节码绕过源码级安全检查</p>
+            </div>
+            <div class="threat-card">
+                <div class="threat-emoji">🎯</div>
+                <h5>触发器劫持</h5>
+                <p>劫持事件触发器执行未授权的恶意操作</p>
+            </div>
+            <div class="threat-card">
+                <div class="threat-emoji">👁️</div>
+                <h5>Unicode隐写</h5>
+                <p>利用不可见Unicode字符隐藏恶意指令</p>
+            </div>
+            <div class="threat-card">
+                <div class="threat-emoji">🔗</div>
+                <h5>传递信任滥用</h5>
+                <p>利用信任链传递机制绕过安全验证</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 技术架构 -->
+<section class="architecture-section">
+    <div class="container">
+        <h2 class="section-title">技术架构</h2>
+        <div class="architecture-diagram">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="arch-layer detection-layer">
+                        <h5><i class="fas fa-layer-group me-2"></i>检测层</h5>
+                        <div class="arch-items">
+                            <div class="arch-item">静态代码分析引擎</div>
+                            <div class="arch-item">威胁情报检测引擎</div>
+                            <div class="arch-item">LLM语义分析引擎</div>
+                            <div class="arch-item">Agent研判智能体</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="arch-layer data-layer">
+                        <h5><i class="fas fa-database me-2"></i>数据层</h5>
+                        <div class="arch-items">
+                            <div class="arch-item">IOC威胁情报库</div>
+                            <div class="arch-item">恶意域名黑名单</div>
+                            <div class="arch-item">Skill可信白名单</div>
+                            <div class="arch-item">检测规则库（热更新）</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="arch-layer app-layer">
+                        <h5><i class="fas fa-cogs me-2"></i>应用层</h5>
+                        <div class="arch-items">
+                            <div class="arch-item">任务调度与追踪</div>
+                            <div class="arch-item">报告生成与导出</div>
+                            <div class="arch-item">可信SkillHub市场</div>
+                            <div class="arch-item">风险可视化大屏</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 快速开始 -->
+<section class="quickstart-section">
+    <div class="container">
+        <div class="quickstart-card">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h3>开始使用SkillGuard保护您的AI Skills</h3>
+                    <p>上传您的Skill文件，获取全面的安全检测报告。支持.zip、.tar.gz、.md等格式，三大引擎同步扫描，17类风险全覆盖。</p>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    <a href="/upload" class="btn btn-primary btn-lg">
+                        <i class="fas fa-rocket me-2"></i>开始扫描
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+
+{% block title %}扫描报告 - {{ task.skill_name }} - SkillGuard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h2><i class="fas fa-file-alt me-3"></i>扫描报告</h2>
+        <p>Skill: <strong>{{ task.skill_name }}</strong> | 任务ID: <code>{{ task.id }}</code></p>
+    </div>
+</div>
+
+<section class="report-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- 报告概览 -->
+                <div class="report-card overview-card">
+                    <div class="report-header">
+                        <h4><i class="fas fa-chart-pie me-2"></i>检测概览</h4>
+                        <div class="report-actions">
+                            <div class="btn-group">
+                                <button class="btn btn-outline-primary btn-sm" onclick="downloadReport('md')">
+                                    <i class="fas fa-download me-1"></i>MD
+                                </button>
+                                <button class="btn btn-outline-primary btn-sm" onclick="downloadReport('html')">
+                                    <i class="fas fa-download me-1"></i>HTML
+                                </button>
+                                <button class="btn btn-outline-primary btn-sm" onclick="downloadReport('json')">
+                                    <i class="fas fa-download me-1"></i>JSON
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="overview-stats">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="overview-item">
+                                    <div class="overview-icon risk-${task.risk_level}">
+                                        <i class="fas fa-shield-alt"></i>
+                                    </div>
+                                    <div class="overview-info">
+                                        <h5>风险等级</h5>
+                                        <span class="risk-text ${task.risk_level}">{{ task.risk_level | default('评估中') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="overview-item">
+                                    <div class="overview-icon">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </div>
+                                    <div class="overview-info">
+                                        <h5>威胁数量</h5>
+                                        <span class="threat-number">{{ task.threat_count or 0 }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="overview-item">
+                                    <div class="overview-icon">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                    <div class="overview-info">
+                                        <h5>风险评分</h5>
+                                        <span class="score-number">{{ task.risk_score or 0 }}/100</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 风险评分条 -->
+                    <div class="risk-meter">
+                        <div class="risk-bar">
+                            <div class="risk-fill" style="width: {{ task.risk_score or 0 }}%"></div>
+                        </div>
+                        <div class="risk-labels">
+                            <span>安全 SAFE</span>
+                            <span>留意 CAUTION</span>
+                            <span>危险 MALICIOUS</span>
+                            <span>高危 CRITICAL</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 威胁分布 -->
+                <div class="report-card">
+                    <h5><i class="fas fa-chart-bar me-2"></i>威胁分布</h5>
+                    <div id="threatDistribution" class="threat-charts">
+                        <!-- 动态加载 -->
+                    </div>
+                </div>
+                
+                <!-- 详细发现 -->
+                <div class="report-card">
+                    <h5><i class="fas fa-list-ul me-2"></i>详细发现</h5>
+                    <div id="findingsList" class="findings-detail">
+                        <!-- 动态加载 -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <!-- 任务信息 -->
+                <div class="report-card sidebar-card">
+                    <h5><i class="fas fa-info-circle me-2"></i>任务信息</h5>
+                    <div class="info-list">
+                        <div class="info-item">
+                            <span class="info-label">任务ID</span>
+                            <code class="info-value">{{ task.id[:8] }}...</code>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Skill名称</span>
+                            <span class="info-value">{{ task.skill_name }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">版本</span>
+                            <span class="info-value">{{ task.skill_version }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">提交者</span>
+                            <span class="info-value">{{ task.submitted_by }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">提交时间</span>
+                            <span class="info-value" id="submitTime"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">完成时间</span>
+                            <span class="info-value" id="completeTime"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">扫描状态</span>
+                            <span class="info-value">{{ task.task_status }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 风险标签 -->
+                <div class="report-card sidebar-card">
+                    <h5><i class="fas fa-tags me-2"></i>风险标签</h5>
+                    <div id="riskTags" class="tags-container">
+                        <!-- 动态加载 -->
+                    </div>
+                </div>
+                
+                <!-- 安全建议 -->
+                <div class="report-card sidebar-card">
+                    <h5><i class="fas fa-lightbulb me-2"></i>安全建议</h5>
+                    <div id="recommendations" class="recommendations-list">
+                        <!-- 动态加载 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadReport();
+});
+
+async function loadReport() {
+    const taskId = '{{ task.id }}';
+    
+    try {
+        const response = await fetch(`/api/report/${taskId}`);
+        
+        if (response.status === 202) {
+            const data = await response.json();
+            document.getElementById('threatDistribution').innerHTML = 
+                '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>' + 
+                (data.error || '报告生成中，请稍后...') + '</div>';
+            setTimeout(loadReport, 3000);
+            return;
+        }
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            console.error('加载报告失败:', data.error);
+            return;
+        }
+        
+        // 填充时间
+        if (data.task.created_at) {
+            document.getElementById('submitTime').textContent = new Date(data.task.created_at).toLocaleString('zh-CN');
+        }
+        if (data.task.completed_at) {
+            document.getElementById('completeTime').textContent = new Date(data.task.completed_at).toLocaleString('zh-CN');
+        }
+        
+        // 渲染威胁分布
+        renderThreatDistribution(data.report_data?.scan_summary);
+        
+        // 渲染详细发现
+        renderFindings(data.findings);
+        
+        // 渲染风险标签
+        renderRiskTags(data.task.risk_tags);
+        
+        // 渲染建议
+        renderRecommendations(data.report);
+        
+    } catch (error) {
+        console.error('加载报告失败:', error);
+    }
+}
+
+function renderThreatDistribution(summary) {
+    const container = document.getElementById('threatDistribution');
+    
+    if (!summary) {
+        container.innerHTML = '<p class="text-muted">暂无数据</p>';
+        return;
+    }
+    
+    const severityData = summary.by_severity || {};
+    const typeData = summary.by_type || {};
+    const methodData = summary.by_detection_method || {};
+    
+    container.innerHTML = `
+        <div class="row">
+            <div class="col-md-4">
+                <h6>按严重程度</h6>
+                <div class="distribution-list">
+                    ${Object.entries(severityData).map(([key, value]) => `
+                        <div class="distribution-item">
+                            <span class="distribution-label severity-${key}">${key.toUpperCase()}</span>
+                            <div class="distribution-bar">
+                                <div class="distribution-fill severity-${key}" style="width: ${Math.min(value * 20, 100)}%"></div>
+                            </div>
+                            <span class="distribution-value">${value}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <h6>按威胁类型</h6>
+                <div class="distribution-list">
+                    ${Object.entries(typeData).slice(0, 5).map(([key, value]) => `
+                        <div class="distribution-item">
+                            <span class="distribution-label">${key}</span>
+                            <div class="distribution-bar">
+                                <div class="distribution-fill" style="width: ${Math.min(value * 20, 100)}%"></div>
+                            </div>
+                            <span class="distribution-value">${value}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <h6>按检测方法</h6>
+                <div class="distribution-list">
+                    ${Object.entries(methodData).map(([key, value]) => `
+                        <div class="distribution-item">
+                            <span class="distribution-label">${getMethodName(key)}</span>
+                            <div class="distribution-bar">
+                                <div class="distribution-fill method-${key}" style="width: ${Math.min(value * 20, 100)}%"></div>
+                            </div>
+                            <span class="distribution-value">${value}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderFindings(findings) {
+    const container = document.getElementById('findingsList');
+    
+    if (!findings || findings.length === 0) {
+        container.innerHTML = `
+            <div class="empty-findings">
+                <i class="fas fa-check-circle text-success"></i>
+                <p>未检测到安全威胁</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = findings.map((finding, index) => `
+        <div class="finding-detail-card ${finding.severity}">
+            <div class="finding-header">
+                <div class="finding-number">#${index + 1}</div>
+                <div class="finding-meta">
+                    <span class="severity-badge ${finding.severity}">${finding.severity.toUpperCase()}</span>
+                    <span class="type-badge">${finding.threat_type}</span>
+                    <span class="method-badge">${getMethodName(finding.detection_method)}</span>
+                </div>
+            </div>
+            <h6>${escapeHtml(finding.title)}</h6>
+            <p>${escapeHtml(finding.description)}</p>
+            <div class="finding-evidence">
+                <label><i class="fas fa-code me-1"></i>证据</label>
+                <code>${escapeHtml(finding.evidence)}</code>
+            </div>
+            <div class="finding-location">
+                <i class="fas fa-file-code me-1"></i>
+                <span>${escapeHtml(finding.file_location)}:${finding.line_number}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderRiskTags(tagsJson) {
+    const container = document.getElementById('riskTags');
+    
+    if (!tagsJson) {
+        container.innerHTML = '<p class="text-muted">无风险标签</p>';
+        return;
+    }
+    
+    try {
+        const tags = JSON.parse(tagsJson);
+        if (tags.length === 0) {
+            container.innerHTML = '<p class="text-muted">无风险标签</p>';
+            return;
+        }
+        
+        container.innerHTML = tags.map(tag => `
+            <span class="risk-tag">${tag}</span>
+        `).join('');
+    } catch {
+        container.innerHTML = '<p class="text-muted">无风险标签</p>';
+    }
+}
+
+function renderRecommendations(report) {
+    const container = document.getElementById('recommendations');
+    
+    if (!report || !report.recommendations) {
+        container.innerHTML = '<p class="text-muted">暂无建议</p>';
+        return;
+    }
+    
+    const recommendations = report.recommendations.split('\n').filter(r => r.trim());
+    
+    container.innerHTML = recommendations.map((rec, index) => `
+        <div class="recommendation-item">
+            <div class="recommendation-number">${index + 1}</div>
+            <p>${escapeHtml(rec)}</p>
+        </div>
+    `).join('');
+}
+
+function getMethodName(method) {
+    const names = {
+        'static_analysis': '01 静态分析',
+        'static_analysis_fp': '01 静态分析(误报)',
+        'signature_matching': '03 情报检测',
+        'signature_matching_fp': '03 情报检测(误报)',
+        'agent_intel': '03 Agent研判',
+        'llm_analysis': '02 LLM语义分析',
+        'llm_static_review': '02 LLM静态审查',
+        'llm_correlation': '02 LLM关联分析',
+        'sandbox': '沙箱检测',
+        'sandbox_execution_error': '沙箱执行异常'
+    };
+    return names[method] || method;
+}
+
+function downloadReport(format) {
+    const taskId = '{{ task.id }}';
+    window.location.href = `/api/report/${taskId}/download?format=${format || 'md'}`;
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}

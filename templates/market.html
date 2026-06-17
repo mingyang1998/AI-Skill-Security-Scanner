@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+
+{% block title %}SkillHub - SkillGuard 可信Agent Skills安全生态市场{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h2><i class="fas fa-store me-3"></i>SKILLGUARD HUB · 可信Agent Skills安全生态市场</h2>
+        <p>为您提供经安全验证的可信Agent Skill，确保Agent在生产环境中稳健运行</p>
+    </div>
+</div>
+
+<section class="market-section">
+    <div class="container">
+        <!-- 市场统计 -->
+        <div class="market-stats">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="market-stat-card trusted">
+                        <i class="fas fa-check-circle"></i>
+                        <div class="stat-info">
+                            <h4 id="trustedCount">-</h4>
+                            <p>安全 SAFE</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="market-stat-card warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div class="stat-info">
+                            <h4 id="warningCount">-</h4>
+                            <p>留意 CAUTION</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="market-stat-card danger">
+                        <i class="fas fa-ban"></i>
+                        <div class="stat-info">
+                            <h4 id="blacklistCount">-</h4>
+                            <p>危险 MALICIOUS</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="market-stat-card info">
+                        <i class="fas fa-download"></i>
+                        <div class="stat-info">
+                            <h4 id="totalDownloads">-</h4>
+                            <p>总下载量</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Skill分类 -->
+        <div class="skill-categories mb-4">
+            <div class="row g-2">
+                <div class="col-auto"><button class="btn btn-outline-primary btn-sm category-btn active" data-category="">全部</button></div>
+                <div class="col-auto"><button class="btn btn-outline-primary btn-sm category-btn" data-category="开发与编码"><i class="fas fa-code me-1"></i>开发与编码</button></div>
+                <div class="col-auto"><button class="btn btn-outline-primary btn-sm category-btn" data-category="AI与智能体"><i class="fas fa-robot me-1"></i>AI与智能体</button></div>
+                <div class="col-auto"><button class="btn btn-outline-primary btn-sm category-btn" data-category="安全与审计"><i class="fas fa-shield-alt me-1"></i>安全与审计</button></div>
+                <div class="col-auto"><button class="btn btn-outline-primary btn-sm category-btn" data-category="数据与金融"><i class="fas fa-chart-bar me-1"></i>数据与金融</button></div>
+                <div class="col-auto"><button class="btn btn-outline-primary btn-sm category-btn" data-category="效率与办公"><i class="fas fa-briefcase me-1"></i>效率与办公</button></div>
+                <div class="col-auto"><button class="btn btn-outline-primary btn-sm category-btn" data-category="内容与创意"><i class="fas fa-palette me-1"></i>内容与创意</button></div>
+                <div class="col-auto"><button class="btn btn-outline-primary btn-sm category-btn" data-category="DevOps与基础设施"><i class="fas fa-server me-1"></i>DevOps</button></div>
+                <div class="col-auto"><button class="btn btn-outline-primary btn-sm category-btn" data-category="自动化与工作流"><i class="fas fa-cogs me-1"></i>自动化</button></div>
+            </div>
+        </div>
+
+        <!-- 风险等级筛选 + 搜索 -->
+        <div class="market-toolbar mb-4">
+            <div class="row align-items-center">
+                <div class="col-md-5">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="form-control" id="searchSkills" placeholder="搜索Skill名称...">
+                    </div>
+                </div>
+                <div class="col-md-7 text-md-end">
+                    <div class="filter-group d-inline-flex gap-2">
+                        <button class="btn btn-sm risk-filter-btn active" data-risk="">全部</button>
+                        <button class="btn btn-sm risk-filter-btn btn-outline-danger" data-risk="high-risk">危险</button>
+                        <button class="btn btn-sm risk-filter-btn btn-outline-warning" data-risk="warning">留意</button>
+                        <button class="btn btn-sm risk-filter-btn btn-outline-success" data-risk="safe">安全</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Skills网格 -->
+        <div id="skillsGrid" class="skills-grid">
+            <!-- 动态加载 -->
+        </div>
+        
+        <div id="paginationContainer" class="pagination-container">
+            <!-- 动态生成 -->
+        </div>
+    </div>
+</section>
+
+<!-- Skill详情模态框 -->
+<div class="modal fade" id="skillDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Skill详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="skillDetailContent">
+                <!-- 动态加载 -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentPage = 1;
+let currentCategory = '';
+let currentRisk = '';
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadMarketStats();
+    loadAllSkills();
+    
+    // 搜索
+    document.getElementById('searchSkills').addEventListener('input', debounce(function(){currentPage=1;loadAllSkills();}, 300));
+    
+    // 分类筛选
+    document.querySelectorAll('.category-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentCategory = this.dataset.category;
+            currentPage = 1;
+            loadAllSkills();
+        });
+    });
+    
+    // 风险筛选
+    document.querySelectorAll('.risk-filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.risk-filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentRisk = this.dataset.risk;
+            currentPage = 1;
+            loadAllSkills();
+        });
+    });
+});
+
+async function loadMarketStats() {
+    try {
+        const [whiteRes, blackRes] = await Promise.all([
+            fetch('/api/market/skills?per_page=1000'),
+            fetch('/api/market/blacklist')
+        ]);
+        const whiteData = await whiteRes.json();
+        const blackData = await blackRes.json();
+        
+        const skills = whiteData.skills || [];
+        const safe = skills.filter(s => s.risk_level === 'safe').length;
+        const warning = skills.filter(s => s.risk_level === 'warning').length;
+        const totalDownloads = skills.reduce((sum, s) => sum + (s.download_count || 0), 0);
+        
+        document.getElementById('trustedCount').textContent = safe;
+        document.getElementById('warningCount').textContent = warning;
+        document.getElementById('blacklistCount').textContent = blackData.length;
+        document.getElementById('totalDownloads').textContent = totalDownloads;
+    } catch (error) {
+        console.error('加载统计数据失败:', error);
+    }
+}
+
+async function loadAllSkills() {
+    try {
+        const search = document.getElementById('searchSkills').value;
+        
+        // 加载白名单和黑名单
+        let url = `/api/market/skills?page=${currentPage}&per_page=12`;
+        if (currentRisk) url += `&risk_level=${currentRisk}`;
+        if (currentCategory) url += `&category=${encodeURIComponent(currentCategory)}`;
+        
+        const [whiteRes, blackRes] = await Promise.all([
+            fetch(url),
+            fetch('/api/market/blacklist')
+        ]);
+        const whiteData = await whiteRes.json();
+        const blackData = await blackRes.json();
+        
+        let allSkills = [...(whiteData.skills || [])];
+        
+        // 如果选了危险等级或没筛选，也显示黑名单
+        if (!currentRisk || currentRisk === 'high-risk') {
+            allSkills = [...allSkills, ...blackData.map(s => ({...s, is_blacklisted: true}))];
+        }
+        
+        // 搜索过滤
+        if (search) {
+            allSkills = allSkills.filter(s => 
+                s.name.toLowerCase().includes(search.toLowerCase()) ||
+                (s.description && s.description.toLowerCase().includes(search.toLowerCase()))
+            );
+        }
+        
+        renderSkillsGrid(allSkills);
+        renderPagination(whiteData);
+    } catch (error) {
+        console.error('加载Skills失败:', error);
+    }
+}
+
+function renderSkillsGrid(skills) {
+    const container = document.getElementById('skillsGrid');
+    
+    if (skills.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state col-12">
+                <i class="fas fa-search"></i>
+                <h4>未找到匹配的Skills</h4>
+                <p>尝试调整筛选条件或搜索关键词</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = skills.map(skill => {
+        const isBlacklisted = skill.is_blacklisted;
+        const riskClass = isBlacklisted ? 'blacklisted' : skill.risk_level;
+        return `
+        <div class="skill-card ${riskClass}">
+            <div class="skill-header">
+                <div class="skill-icon ${isBlacklisted ? 'danger' : ''}">
+                    <i class="fas ${isBlacklisted ? 'fa-skull-crossbones' : 'fa-cube'}"></i>
+                </div>
+                <div class="skill-badges">
+                    ${isBlacklisted ? '<span class="source-badge blacklisted">危险</span>' : '<span class="source-badge scanned"><i class="fas fa-shield-alt me-1"></i>安全验证</span>'}
+                    <span class="risk-badge ${skill.risk_level}">${getRiskName(skill.risk_level)}</span>
+                </div>
+            </div>
+            <div class="skill-body">
+                <h5>${escapeHtml(skill.name)}</h5>
+                <p class="skill-description">${escapeHtml(skill.description || '暂无描述')}</p>
+                <div class="skill-meta">
+                    <span><i class="fas fa-code-branch me-1"></i>${skill.version}</span>
+                    <span><i class="fas fa-user me-1"></i>${escapeHtml(skill.author || 'Unknown')}</span>
+                </div>
+            </div>
+            <div class="skill-footer">
+                <div class="skill-stats">
+                    <span><i class="fas fa-download me-1"></i>${skill.download_count || 0}</span>
+                    <span><i class="fas fa-star me-1"></i>${skill.rating || 5.0}</span>
+                </div>
+                <button class="btn btn-sm btn-outline-primary" onclick="viewSkillDetail(${skill.id || 0}, ${isBlacklisted})">
+                    详情
+                </button>
+            </div>
+        </div>
+    `}).join('');
+}
+
+function renderPagination(data) {
+    const container = document.getElementById('paginationContainer');
+    if (data.pages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+    container.innerHTML = `
+        <ul class="pagination justify-content-center">
+            <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">上一页</a>
+            </li>
+            ${Array.from({length: Math.min(data.pages, 5)}, (_, i) => {
+                let p = currentPage <= 3 ? i + 1 : currentPage - 2 + i;
+                if (p > data.pages) return '';
+                return `<li class="page-item ${p === currentPage ? 'active' : ''}"><a class="page-link" href="#" onclick="changePage(${p})">${p}</a></li>`;
+            }).join('')}
+            <li class="page-item ${currentPage === data.pages ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">下一页</a>
+            </li>
+        </ul>
+    `;
+}
+
+async function viewSkillDetail(skillId, isBlacklisted) {
+    if (isBlacklisted) {
+        const content = document.getElementById('skillDetailContent');
+        content.innerHTML = `
+            <div class="skill-detail">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>风险提示</strong>：该Skill已被标记为危险，建议避免使用。
+                </div>
+            </div>
+        `;
+        new bootstrap.Modal(document.getElementById('skillDetailModal')).show();
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/market/skills/${skillId}`);
+        const skill = await response.json();
+        
+        const content = document.getElementById('skillDetailContent');
+        content.innerHTML = `
+            <div class="skill-detail">
+                <div class="detail-header">
+                    <div class="detail-icon">
+                        <i class="fas fa-cube"></i>
+                    </div>
+                    <div class="detail-title">
+                        <h4>${escapeHtml(skill.name)}</h4>
+                        <div class="detail-badges">
+                            <span class="badge bg-success"><i class="fas fa-shield-alt me-1"></i>安全验证</span>
+                            <span class="badge bg-${skill.risk_level === 'safe' ? 'success' : 'warning'}">${getRiskName(skill.risk_level)}</span>
+                            <span class="badge bg-secondary">v${skill.version}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="detail-body">
+                    <div class="detail-section">
+                        <h6>描述</h6>
+                        <p>${escapeHtml(skill.description || '暂无描述')}</p>
+                    </div>
+                    <div class="detail-section">
+                        <div class="row">
+                            <div class="col-md-6"><h6>作者</h6><p>${escapeHtml(skill.author || 'Unknown')}</p></div>
+                            <div class="col-md-6"><h6>标签</h6><p>${skill.tags || '无'}</p></div>
+                        </div>
+                    </div>
+                    <div class="detail-section">
+                        <div class="row">
+                            <div class="col-md-4"><h6>下载量</h6><p><i class="fas fa-download me-1"></i>${skill.download_count || 0}</p></div>
+                            <div class="col-md-4"><h6>评分</h6><p><i class="fas fa-star me-1 text-warning"></i>${skill.rating || 5.0}/5.0</p></div>
+                            <div class="col-md-4"><h6>更新时间</h6><p>${formatDate(skill.updated_at)}</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        new bootstrap.Modal(document.getElementById('skillDetailModal')).show();
+    } catch (error) {
+        console.error('加载详情失败:', error);
+    }
+}
+
+function getRiskName(risk) {
+    const names = {'safe': '安全', 'warning': '留意', 'dangerous': '危险', 'high-risk': '高危', 'unknown': '未完成'};
+    return names[risk] || risk;
+}
+
+function changePage(page) { currentPage = page; loadAllSkills(); }
+function debounce(func, wait) { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func(...args), wait); }; }
+function formatDate(dateString) { if (!dateString) return '-'; return new Date(dateString).toLocaleString('zh-CN'); }
+function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+</script>
+{% endblock %}

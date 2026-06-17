@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+
+{% block title %}任务追踪 - SkillGuard AI Skill安全检测平台{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h2><i class="fas fa-tasks me-3"></i>任务追踪中心</h2>
+        <p>实时查看和管理您的Skill安全扫描任务</p>
+    </div>
+</div>
+
+<section class="tasks-section">
+    <div class="container">
+        <!-- 筛选和统计 -->
+        <div class="tasks-toolbar">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="filter-buttons">
+                        <button class="btn btn-outline-primary active" data-filter="all">全部</button>
+                        <button class="btn btn-outline-warning" data-filter="running">进行中</button>
+                        <button class="btn btn-outline-success" data-filter="completed">已完成</button>
+                        <button class="btn btn-outline-danger" data-filter="failed">失败</button>
+                    </div>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="refresh-action">
+                        <button class="btn btn-outline-secondary" onclick="loadTasks()">
+                            <i class="fas fa-sync-alt me-2"></i>刷新
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 任务列表 -->
+        <div class="tasks-container">
+            <div class="table-responsive">
+                <table class="table table-hover tasks-table">
+                    <thead>
+                        <tr>
+                            <th>任务ID</th>
+                            <th>Skill名称</th>
+                            <th>版本</th>
+                            <th>状态</th>
+                            <th>风险定级</th>
+                            <th>风险标签</th>
+                            <th>风险数量</th>
+                            <th>提交时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tasksTableBody">
+                        <!-- 动态加载 -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 空状态 -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <div class="empty-icon">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <h4>暂无扫描任务</h4>
+                <p>您还没有提交过扫描任务，点击"立即扫描"开始检测</p>
+                <a href="/upload" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>立即扫描
+                </a>
+            </div>
+            
+            <!-- 分页 -->
+            <nav id="pagination" class="pagination-container" style="display: none;">
+                <ul class="pagination justify-content-center">
+                    <!-- 动态生成 -->
+                </ul>
+            </nav>
+        </div>
+    </div>
+</section>
+
+<!-- 任务详情模态框 -->
+<div class="modal fade" id="taskDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">任务详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="taskDetailContent">
+                <!-- 动态加载 -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <a href="#" class="btn btn-primary" id="viewReportBtn">查看完整报告</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentPage = 1;
+let currentFilter = 'all';
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadTasks();
+    
+    // 筛选按钮事件
+    document.querySelectorAll('.filter-buttons .btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.filter-buttons .btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentFilter = this.dataset.filter;
+            currentPage = 1;
+            loadTasks();
+        });
+    });
+});
+
+async function loadTasks() {
+    try {
+        let url = `/api/tasks?page=${currentPage}`;
+        if (currentFilter !== 'all') {
+            url += `&status=${currentFilter}`;
+        }
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        renderTasks(data.tasks);
+        renderPagination(data);
+        
+        // 显示/隐藏空状态
+        const emptyState = document.getElementById('emptyState');
+        const tableContainer = document.querySelector('.table-responsive');
+        
+        if (data.tasks.length === 0) {
+            emptyState.style.display = 'block';
+            tableContainer.style.display = 'none';
+        } else {
+            emptyState.style.display = 'none';
+            tableContainer.style.display = 'block';
+        }
+        
+    } catch (error) {
+        console.error('加载任务失败:', error);
+    }
+}
+
+function renderTasks(tasks) {
+    const tbody = document.getElementById('tasksTableBody');
+    tbody.innerHTML = '';
+    
+    tasks.forEach(task => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><code>${task.id.substring(0, 8)}...</code></td>
+            <td><strong>${escapeHtml(task.skill_name)}</strong></td>
+            <td>${task.skill_version}</td>
+            <td>${getStatusBadge(task.task_status)}</td>
+            <td>${getRiskBadge(task.risk_level)}</td>
+            <td>${getRiskTags(task.risk_tags)}</td>
+            <td><span class="threat-count ${task.threat_count > 0 ? 'has-threats' : ''}">${task.threat_count}</span></td>
+            <td>${formatDate(task.created_at)}</td>
+            <td>
+                <div class="action-buttons">
+                    <button class="btn btn-sm btn-outline-info" onclick="viewTaskDetail('${task.id}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    ${task.task_status === 'completed' ? `
+                        <a href="/report/${task.id}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-file-alt"></i>
+                        </a>
+                        <button class="btn btn-sm btn-outline-success" onclick="downloadReport('${task.id}')">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderPagination(data) {
+    const pagination = document.getElementById('pagination');
+    
+    if (data.pages <= 1) {
+        pagination.style.display = 'none';
+        return;
+    }
+    
+    pagination.style.display = 'block';
+    const ul = pagination.querySelector('ul');
+    ul.innerHTML = '';
+    
+    // 上一页
+    ul.innerHTML += `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">上一页</a>
+        </li>
+    `;
+    
+    // 页码
+    for (let i = 1; i <= data.pages; i++) {
+        ul.innerHTML += `
+            <li class="page-item ${i === currentPage ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+            </li>
+        `;
+    }
+    
+    // 下一页
+    ul.innerHTML += `
+        <li class="page-item ${currentPage === data.pages ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">下一页</a>
+        </li>
+    `;
+}
+
+function changePage(page) {
+    currentPage = page;
+    loadTasks();
+}
+
+function getStatusBadge(status) {
+    const badges = {
+        'pending': '<span class="badge bg-secondary">未开始</span>',
+        'queued': '<span class="badge bg-info">排队中</span>',
+        'running': '<span class="badge bg-warning"><i class="fas fa-spinner fa-spin me-1"></i>进行中</span>',
+        'completed': '<span class="badge bg-success">已完成</span>',
+        'failed': '<span class="badge bg-danger">扫描失败</span>'
+    };
+    return badges[status] || `<span class="badge bg-secondary">${status}</span>`;
+}
+
+function getRiskBadge(level) {
+    const badges = {
+        'safe': '<span class="badge bg-success">安全 SAFE</span>',
+        'warning': '<span class="badge bg-warning">留意 CAUTION</span>',
+        'dangerous': '<span class="badge bg-orange">危险 MALICIOUS</span>',
+        'high-risk': '<span class="badge bg-danger">高危 CRITICAL</span>',
+        'unknown': '<span class="badge bg-secondary" title="LLM语义分析未完成，结果仅基于静态规则">⚠ 未完成 INCOMPLETE</span>'
+    };
+    return badges[level] || `<span class="badge bg-secondary">${level}</span>`;
+}
+
+function getRiskTags(tags) {
+    if (!tags) return '<span class="text-muted">-</span>';
+    
+    try {
+        const tagList = JSON.parse(tags);
+        if (tagList.length === 0) return '<span class="text-muted">-</span>';
+        
+        return tagList.slice(0, 2).map(tag => 
+            `<span class="tag-badge">${tag}</span>`
+        ).join('') + (tagList.length > 2 ? `<span class="tag-badge">+${tagList.length - 2}</span>` : '');
+    } catch {
+        return '<span class="text-muted">-</span>';
+    }
+}
+
+async function viewTaskDetail(taskId) {
+    try {
+        const response = await fetch(`/api/tasks/${taskId}`);
+        const data = await response.json();
+        
+        const modal = new bootstrap.Modal(document.getElementById('taskDetailModal'));
+        const content = document.getElementById('taskDetailContent');
+        
+        content.innerHTML = `
+            <div class="task-detail">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="text-muted">任务ID</label>
+                        <p><code>${data.task.id}</code></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted">提交时间</label>
+                        <p>${formatDate(data.task.created_at)}</p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="text-muted">Skill名称</label>
+                        <p><strong>${escapeHtml(data.task.skill_name)}</strong></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted">版本</label>
+                        <p>${data.task.skill_version}</p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="text-muted">状态</label>
+                        <p>${getStatusBadge(data.task.task_status)}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted">风险等级</label>
+                        <p>${getRiskBadge(data.task.risk_level)}</p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="text-muted">风险评分</label>
+                        <p><span class="risk-score ${data.task.risk_score > 50 ? 'high' : data.task.risk_score > 20 ? 'medium' : 'low'}">${data.task.risk_score}/100</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted">威胁数量</label>
+                        <p><strong>${data.task.threat_count}</strong></p>
+                    </div>
+                </div>
+                
+                ${data.findings.length > 0 ? `
+                    <h6 class="mt-4 mb-3">检测发现</h6>
+                    <div class="findings-list">
+                        ${data.findings.map(finding => `
+                            <div class="finding-item ${finding.severity}">
+                                <div class="finding-header">
+                                    <span class="finding-severity ${finding.severity}">${finding.severity.toUpperCase()}</span>
+                                    <span class="finding-type">${finding.threat_type}</span>
+                                </div>
+                                <h6>${escapeHtml(finding.title)}</h6>
+                                <p class="mb-1">${escapeHtml(finding.description)}</p>
+                                <small class="text-muted">
+                                    <i class="fas fa-file-code me-1"></i>${escapeHtml(finding.file_location)}:${finding.line_number}
+                                </small>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : '<p class="text-muted">暂无发现</p>'}
+            </div>
+        `;
+        
+        document.getElementById('viewReportBtn').href = `/report/${taskId}`;
+        modal.show();
+        
+    } catch (error) {
+        console.error('加载任务详情失败:', error);
+    }
+}
+
+async function downloadReport(taskId) {
+    try {
+        const response = await fetch(`/api/report/${taskId}/download`);
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `scan_report_${taskId}.md`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } else {
+            alert('下载报告失败');
+        }
+    } catch (error) {
+        console.error('下载报告失败:', error);
+        alert('下载失败');
+    }
+}
+
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleString('zh-CN');
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+</script>
+{% endblock %}
